@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Linq;
+using System.Security.Policy;
 
 namespace ConsoleSnake
 {
@@ -6,7 +8,9 @@ namespace ConsoleSnake
     {
         static void Main(string[] args)
         {
+            Console.CursorVisible = false;
             Snake snake = new Snake();
+            Meal meal = new Meal();
             Board.DrawStarterBoard('*');
             Board.PrintBoard();
 
@@ -28,18 +32,22 @@ namespace ConsoleSnake
 
                         case ConsoleKey.UpArrow:
                             snake.MoveDirection = Snake.Direction.UP;
+                            snake.SnakeHeadChar = '^';
                             break;
 
                         case ConsoleKey.DownArrow:
                             snake.MoveDirection = Snake.Direction.DOWN;
+                            snake.SnakeHeadChar = 'v';
                             break;
 
                         case ConsoleKey.RightArrow:
                             snake.MoveDirection = Snake.Direction.RIGHT;
+                            snake.SnakeHeadChar = '>';
                             break;
 
                         case ConsoleKey.LeftArrow:
                             snake.MoveDirection = Snake.Direction.LEFT;
+                            snake.SnakeHeadChar = '<';
                             break;
                     }
                     
@@ -47,14 +55,46 @@ namespace ConsoleSnake
 
                 if((DateTime.Now - previousDate).TotalMilliseconds >= frameRate)
                 {
-                    snake.Move();
+                    try
+                    {
+
+                        snake.Move();
+                        exit = snake.GameOver();
+                        snake.AddTailPositionToList();           
+                        if(snake.TailPos.Count > snake.Length)
+                        {
+                            var endOfTail = snake.TailPos.First();
+                            Console.SetCursorPosition(endOfTail.PositionY,endOfTail.PositionX);
+                            Console.Write(" ");
+                            snake.TailPos.Remove(endOfTail);
+                        }
+                    }
+                    catch(ArgumentOutOfRangeException e)
+                    { 
+                        exit = true;
+                    }
                     previousDate = DateTime.Now;
-                }
-             
+
+                    if (snake.HeadPosition.PositionX == meal.position.PositionX && snake.HeadPosition.PositionY == meal.position.PositionY)
+                    {
+                        meal.isAlive = false;
+                        snake.Eat();
+                        frameRate -=10;
+                    }
+                    if (!meal.isAlive)
+                    {
+                        meal.RandomizeMealPosition();
+                        Console.SetCursorPosition(meal.position.PositionY, meal.position.PositionX);
+                        meal.drawMeal();
+                    }
+                }            
+
             }
+           
 
 
 
         }
+
     }
 }
